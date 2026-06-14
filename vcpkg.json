@@ -1,0 +1,24 @@
+{
+  "name": "dopy-game",
+  "version": "0.1.0",
+  "dependencies": [
+    "glm",
+    {
+      "name": "imgui",
+      "features": [
+        "sdlgpu3-binding"
+      ]
+    },
+    "libjpeg-turbo",
+    "nlohmann-json",
+    {
+      "name": "sdl3",
+      "features": [
+        "vulkan"
+      ]
+    },
+    "sdl3-shadercross",
+    "tracy",
+    "entt"
+  ]
+}

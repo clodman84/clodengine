@@ -1,0 +1,8 @@
+build/
+release/
+.cache/
+test/
+core.*
+imgui.ini
+dist/
+Data/assets/
