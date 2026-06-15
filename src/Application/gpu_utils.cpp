@@ -331,7 +331,8 @@ bool TextureManager::upload_texture_data_to_gpu(unsigned char *image_data,
   SDL_GPUTextureCreateInfo texture_info = {};
   texture_info.type = SDL_GPU_TEXTURETYPE_2D;
   texture_info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
-  texture_info.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
+  texture_info.usage =
+      SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_READ;
   texture_info.width = static_cast<Uint32>(width);
   texture_info.height = static_cast<Uint32>(height);
   texture_info.layer_count_or_depth = 1;

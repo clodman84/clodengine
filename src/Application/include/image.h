@@ -10,7 +10,9 @@ class Image {
 public:
   Image(std::filesystem::path filename,
         std::shared_ptr<TextureManager> texture_manager)
-      : filename(filename), texture_manager(texture_manager) {};
+      : filename(filename), texture_manager(texture_manager) {
+    SDL_Log("[Image] %s created!", filename.c_str());
+  };
   ~Image();
   bool is_valid() const;
 

@@ -1,5 +1,6 @@
 #include "include/components.h"
 #include "include/game.h"
+#include "include/image.h"
 #include <SDL3/SDL_gpu.h>
 #include <cstdint>
 #include <entt/entity/entity.hpp>
@@ -592,6 +593,22 @@ void Game::draw_debug() {
       }
       ImGui::EndTabItem();
     }
+
+    if (ImGui::BeginTabItem("Compute Shader")) {
+      ImGui::BeginGroup();
+      ImGui::Text("Input:");
+      ImGui::Image((ImTextureID)renderer.fft_source(), {512, 512});
+      ImGui::EndGroup();
+
+      ImGui::SameLine();
+      ImGui::BeginGroup();
+      ImGui::Text("Output:");
+      ImGui::Image((ImTextureID)renderer.compute_target(), {512, 512});
+      ImGui::EndGroup();
+
+      ImGui::EndTabItem();
+    }
+
     ImGui::EndTabBar();
   }
   ImGui::End();

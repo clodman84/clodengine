@@ -1,6 +1,7 @@
 #pragma once
 
 #include "include/components.h"
+#include "include/image.h"
 #include "include/model.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
@@ -55,6 +56,8 @@ public:
 
   void begin_shadow_pass();
   void end_shadow_pass();
+  void run_compute_pass();
+
   void draw_model_shadow(std::shared_ptr<Model> model,
                          const WorldTransformComponent &transform);
 
@@ -62,6 +65,8 @@ public:
   void set_projection(const glm::mat4 &p) { proj_ = p; }
 
   SDL_GPUTexture *render_target() const { return render_target_; }
+  SDL_GPUTexture *fft_source() const { return square->texture; }
+  SDL_GPUTexture *compute_target() const { return compute_target_; }
   SDL_GPUTexture *shadow_map() const { return shadow_map_; }
 
   int render_width() const { return render_width_; }
@@ -82,14 +87,20 @@ private:
                              Uint32 samplers = 0) const;
   SDL_GPUTextureFormat get_supported_depth_format();
 
+  // pipelines
   bool create_pipeline();
-  bool create_render_target();
-  bool create_sampler();
-  bool create_gray_texture();
-
   bool create_shadow_pipeline();
-  bool create_shadow_map();
+  bool create_compute_pipeline();
+
+  // samplers
+  bool create_sampler();
   bool create_shadow_sampler();
+
+  // textures
+  bool create_gray_texture();
+  bool create_render_target();
+  bool create_shadow_map();
+  bool create_compute_target();
 
   std::shared_ptr<TextureManager> texture_manager_;
 
@@ -98,11 +109,13 @@ private:
 
   SDL_GPUGraphicsPipeline *pipeline_ = nullptr;
   SDL_GPUGraphicsPipeline *shadow_pipeline_ = nullptr;
+  SDL_GPUComputePipeline *compute_pipeline_ = nullptr;
 
   SDL_GPUTexture *render_target_ = nullptr;
   SDL_GPUTexture *gray_texture_ = nullptr;
   SDL_GPUTexture *depth_target_ = nullptr;
   SDL_GPUTexture *shadow_map_ = nullptr;
+  SDL_GPUTexture *compute_target_ = nullptr;
 
   SDL_GPUSampler *sampler_ = nullptr;
   SDL_GPUSampler *shadow_sampler_ = nullptr;
@@ -118,6 +131,8 @@ private:
   UniformBuffer uniform_{};
   SceneLightBuffer light_buffer_{};
   ShadowUniform shadow_uniform_{};
+
+  std::unique_ptr<Image> square;
 
   static constexpr int render_width_ = 1920;
   static constexpr int render_height_ = 1080;

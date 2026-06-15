@@ -1,5 +1,6 @@
 #include "include/renderer.h"
 #include "include/components.h"
+#include "include/image.h"
 #include "include/model.h"
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_log.h>
@@ -25,6 +26,20 @@ Renderer::~Renderer() {
     SDL_ReleaseGPUTexture(device_, shadow_map_);
   if (shadow_sampler_)
     SDL_ReleaseGPUSampler(device_, shadow_sampler_);
+  if (compute_pipeline_)
+    SDL_ReleaseGPUComputePipeline(device_, compute_pipeline_);
+  if (compute_target_)
+    SDL_ReleaseGPUTexture(device_, compute_target_);
+  if (pipeline_)
+    SDL_ReleaseGPUGraphicsPipeline(device_, pipeline_);
+  if (render_target_)
+    SDL_ReleaseGPUTexture(device_, render_target_);
+  if (depth_target_)
+    SDL_ReleaseGPUTexture(device_, depth_target_);
+  if (gray_texture_)
+    SDL_ReleaseGPUTexture(device_, gray_texture_);
+  if (sampler_)
+    SDL_ReleaseGPUSampler(device_, sampler_);
   SDL_Log("[Renderer] Renderer object destroyed");
 }
 
@@ -49,6 +64,10 @@ bool Renderer::init() {
     return false;
   }
 
+  square =
+      std::make_unique<Image>("./Data/assets/square.png", texture_manager_);
+  square->load_fullres();
+
   if (!create_pipeline())
     return false;
   if (!create_sampler())
@@ -57,12 +76,15 @@ bool Renderer::init() {
     return false;
   if (!create_render_target())
     return false;
-
   if (!create_shadow_pipeline())
     return false;
   if (!create_shadow_map())
     return false;
   if (!create_shadow_sampler())
+    return false;
+  if (!create_compute_pipeline())
+    return false;
+  if (!create_compute_target())
     return false;
 
   return true;
@@ -175,6 +197,107 @@ SDL_GPUShader *Renderer::load_shader(std::filesystem::path path,
   return shader;
 }
 
+static std::vector<uint8_t> load_spirv(std::filesystem::path path) {
+  SDL_IOStream *io = SDL_IOFromFile(path.c_str(), "rb");
+  if (!io)
+    return {};
+
+  Sint64 size = SDL_GetIOSize(io);
+  if (size <= 0) {
+    SDL_CloseIO(io);
+    return {};
+  }
+
+  std::vector<uint8_t> buf(static_cast<size_t>(size));
+  SDL_ReadIO(io, buf.data(), buf.size());
+  SDL_CloseIO(io);
+  return buf;
+}
+
+bool Renderer::create_compute_pipeline() {
+  auto spirv = load_spirv("./Data/shaders/fft.comp.spv");
+
+  const SDL_GPUComputePipelineCreateInfo create_info = {
+      .code_size = spirv.size(),
+      .code = spirv.data(),
+      .entrypoint = "main",
+      .format = SDL_GPU_SHADERFORMAT_SPIRV,
+
+      .num_samplers = 0,
+      .num_readonly_storage_textures = 1,
+      .num_readonly_storage_buffers = 0,
+      .num_readwrite_storage_textures = 1,
+      .num_readwrite_storage_buffers = 0,
+      .num_uniform_buffers = 0,
+
+      .threadcount_x = 64,
+      .threadcount_y = 1,
+      .threadcount_z = 1,
+
+      .props = 0,
+  };
+
+  compute_pipeline_ = SDL_CreateGPUComputePipeline(device_, &create_info);
+  if (!compute_pipeline_) {
+    SDL_Log("[Renderer] create_compute_pipeline: SDL_CreateGPUComputePipeline "
+            "failed: %s",
+            SDL_GetError());
+    return false;
+  }
+  return true;
+}
+
+bool Renderer::create_compute_target() {
+  SDL_GPUTextureCreateInfo info{};
+  info.type = SDL_GPU_TEXTURETYPE_2D;
+  info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+  info.width = static_cast<Uint32>(square->width);
+  info.height = static_cast<Uint32>(square->height);
+  info.layer_count_or_depth = 1;
+  info.num_levels = 1;
+  info.usage =
+      SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE // writeable by compute shader
+      | SDL_GPU_TEXTUREUSAGE_SAMPLER;            // readable in fragment shader
+
+  compute_target_ = SDL_CreateGPUTexture(device_, &info);
+  if (!compute_target_) {
+    SDL_Log("[Renderer] create_compute_target: failed: %s", SDL_GetError());
+    return false;
+  }
+  return true;
+}
+
+void Renderer::run_compute_pass() {
+  cmd_ = SDL_AcquireGPUCommandBuffer(device_);
+  SDL_GPUStorageTextureReadWriteBinding rw_binding{};
+  rw_binding.texture = compute_target_;
+  rw_binding.mip_level = 0;
+  rw_binding.layer = 0;
+  rw_binding.cycle = true;
+
+  SDL_GPUComputePass *compute_pass =
+      SDL_BeginGPUComputePass(cmd_, &rw_binding, 1, nullptr, 0);
+
+  if (!compute_pass) {
+    SDL_Log("[Renderer] run_compute_pass: SDL_BeginGPUComputePass failed: %s",
+            SDL_GetError());
+    SDL_CancelGPUCommandBuffer(cmd_);
+    return;
+  }
+
+  // 1. pipeline
+  SDL_BindGPUComputePipeline(compute_pass, compute_pipeline_);
+  // 2. readonly input texture (set = 1)
+  SDL_BindGPUComputeStorageTextures(compute_pass, 0, &square->texture, 1);
+  // 3. dispatch
+  uint32_t total = square->height * square->width;
+  uint32_t groups = (total + 63) / 64;
+  SDL_DispatchGPUCompute(compute_pass, groups, 1, 1);
+
+  SDL_EndGPUComputePass(compute_pass);
+  SDL_SubmitGPUCommandBuffer(cmd_);
+}
+
 bool Renderer::create_pipeline() {
   SDL_GPUShader *vertex_shader_ =
       load_shader("./Data/shaders/vertex.spv", SDL_GPU_SHADERSTAGE_VERTEX, 1);
@@ -265,7 +388,6 @@ bool Renderer::create_pipeline() {
   vertex_shader_ = nullptr;
   SDL_ReleaseGPUShader(device_, fragment_shader_);
   fragment_shader_ = nullptr;
-
   return true;
 }
 
@@ -446,8 +568,9 @@ bool Renderer::create_render_target() {
   tex_info.height = static_cast<Uint32>(render_height_);
   tex_info.layer_count_or_depth = 1;
   tex_info.num_levels = 1;
-  tex_info.usage =
-      SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
+  tex_info.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET |
+                   SDL_GPU_TEXTUREUSAGE_SAMPLER |
+                   SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_READ;
 
   render_target_ = SDL_CreateGPUTexture(device_, &tex_info);
   if (!render_target_) {

@@ -211,6 +211,8 @@ void Game::render_frame() {
        registry->view<RenderableComponent, WorldTransformComponent>().each())
     renderer.draw_model(renderable.model, transform, DrawPass::Transparent);
   renderer.end_frame();
+
+  renderer.run_compute_pass();
 }
 
 void Game::advance_animations(float dt) {
