@@ -64,9 +64,9 @@ bool Renderer::init() {
     return false;
   }
 
-  square =
-      std::make_unique<Image>("./Data/assets/square.png", texture_manager_);
-  square->load_fullres();
+  fft_input =
+      std::make_unique<Image>("./Data/assets/fft_input.png", texture_manager_);
+  fft_input->load_fullres();
 
   if (!create_pipeline())
     return false;
@@ -251,8 +251,8 @@ bool Renderer::create_compute_target() {
   SDL_GPUTextureCreateInfo info{};
   info.type = SDL_GPU_TEXTURETYPE_2D;
   info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
-  info.width = static_cast<Uint32>(square->width);
-  info.height = static_cast<Uint32>(square->height);
+  info.width = static_cast<Uint32>(fft_input->width);
+  info.height = static_cast<Uint32>(fft_input->height);
   info.layer_count_or_depth = 1;
   info.num_levels = 1;
   info.usage =
@@ -288,9 +288,9 @@ void Renderer::run_compute_pass() {
   // 1. pipeline
   SDL_BindGPUComputePipeline(compute_pass, compute_pipeline_);
   // 2. readonly input texture (set = 1)
-  SDL_BindGPUComputeStorageTextures(compute_pass, 0, &square->texture, 1);
+  SDL_BindGPUComputeStorageTextures(compute_pass, 0, &fft_input->texture, 1);
   // 3. dispatch
-  uint32_t total = square->height * square->width;
+  uint32_t total = fft_input->height * fft_input->width;
   uint32_t groups = (total + 63) / 64;
   SDL_DispatchGPUCompute(compute_pass, groups, 1, 1);
 

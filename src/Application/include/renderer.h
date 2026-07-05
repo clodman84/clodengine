@@ -65,7 +65,7 @@ public:
   void set_projection(const glm::mat4 &p) { proj_ = p; }
 
   SDL_GPUTexture *render_target() const { return render_target_; }
-  SDL_GPUTexture *fft_source() const { return square->texture; }
+  SDL_GPUTexture *fft_source() const { return fft_input->texture; }
   SDL_GPUTexture *compute_target() const { return compute_target_; }
   SDL_GPUTexture *shadow_map() const { return shadow_map_; }
 
@@ -132,7 +132,7 @@ private:
   SceneLightBuffer light_buffer_{};
   ShadowUniform shadow_uniform_{};
 
-  std::unique_ptr<Image> square;
+  std::unique_ptr<Image> fft_input;
 
   static constexpr int render_width_ = 1920;
   static constexpr int render_height_ = 1080;
