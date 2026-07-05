@@ -1,5 +1,6 @@
 # TODO:
 
+0. Create a pipeline abstraction
 1. Add fraunhoffer diffraction via convolution bloom
 2. Add screenspace entity picker
 3. Refactor the mess

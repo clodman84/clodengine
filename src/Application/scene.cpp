@@ -91,8 +91,8 @@ void Scene::update_world_transforms() {
       });
 }
 
-void Scene::init() {
-  load_from_glb("./Data/assets/littlest_tokyo.glb");
+void Scene::init(std::filesystem::path path_to_glb) {
+  load_from_glb(path_to_glb.c_str());
 
   auto [ws_min, ws_max] = world_bounds();
   const glm::vec3 ws_center = (ws_min + ws_max) * 0.5f;

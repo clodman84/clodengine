@@ -3,6 +3,7 @@
 #include "include/gpu_utils.h"
 #include "include/model.h"
 #include <entt/entity/fwd.hpp>
+#include <filesystem>
 #include <memory>
 
 class Scene {
@@ -11,7 +12,7 @@ public:
         std::shared_ptr<TextureManager> texture_manager,
         std::shared_ptr<entt::registry> registry);
   ~Scene();
-  void init();
+  void init(std::filesystem::path path_to_glb);
   void attach_scene_node(entt::entity child, entt::entity parent);
   void detach_scene_node(entt::entity node);
   void update_world_transforms();

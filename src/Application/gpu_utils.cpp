@@ -396,6 +396,23 @@ bool TextureManager::upload_texture_data_to_gpu(unsigned char *image_data,
   return true;
 }
 
+const bool TextureManager::create_texture(SDL_GPUTextureCreateInfo &tex_info,
+                                          SDL_GPUTexture **out_texture) {
+  SDL_GPUTexture *texture = SDL_CreateGPUTexture(device, &tex_info);
+  if (!texture) {
+    SDL_Log("[TextureManager] create_texture: SDL_CreateGPUTexture failed: %s",
+            SDL_GetError());
+    return false;
+  }
+  {
+    std::lock_guard lock(blingus_mutexus_biggus_problemus);
+    textures_in_use.insert(texture);
+  }
+  SDL_Log("[Texture Manager] Created Texture");
+  *out_texture = texture;
+  return true;
+}
+
 unsigned char *resize_image_rgba8(const unsigned char *src_data, int src_w,
                                   int src_h, int dst_w, int dst_h) {
   unsigned char *dst_data = static_cast<unsigned char *>(

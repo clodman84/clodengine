@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_gpu.h>
 #include <cstddef>
 #include <filesystem>
 #include <mutex>
@@ -28,6 +29,8 @@ public:
 
   bool upload_texture_data_to_gpu(unsigned char *image_data, int width,
                                   int height, SDL_GPUTexture **out_texture);
+  const bool create_texture(SDL_GPUTextureCreateInfo &tex_info,
+                            SDL_GPUTexture **out_texture);
 
   void queue_destruction(SDL_GPUTexture *texture) {
     std::lock_guard lock(blingus_mutexus_biggus_problemus);

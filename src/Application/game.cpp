@@ -53,7 +53,7 @@ Animation make_rotation_animation(entt::entity target, float duration) {
 
 void Game::init() {
   renderer.init();
-  level->init();
+  level->init("./Data/assets/littlest_tokyo.glb");
   registry->view<Anchor, AnimationComponent>().each(
       [&](entt::entity e, AnimationComponent &anim_comp) {
         anim_comp.animations.push_back(make_rotation_animation(e, 20.0f));
