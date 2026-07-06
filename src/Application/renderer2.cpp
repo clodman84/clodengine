@@ -3,15 +3,15 @@
 #include "include/graphics_pipeline.h"
 #include <SDL3/SDL_gpu.h>
 
-NewRenderer::NewRenderer(SDL_GPUDevice *device, SDL_Window *window,
-                         std::shared_ptr<TextureManager> texture_manager)
+Renderer::Renderer(SDL_GPUDevice *device, SDL_Window *window,
+                   std::shared_ptr<TextureManager> texture_manager)
     : device_(device), window_(window), texture_manager_(texture_manager),
       shadow_pipeline(device, window, texture_manager),
       standard_pipeline(device, window, texture_manager) {
   SDL_Log("[Renderer] Renderer object created");
 };
 
-NewRenderer::~NewRenderer() {
+Renderer::~Renderer() {
   if (compute_pipeline_)
     SDL_ReleaseGPUComputePipeline(device_, compute_pipeline_);
   if (compute_target_)
@@ -19,7 +19,7 @@ NewRenderer::~NewRenderer() {
   SDL_Log("[Renderer] Renderer object destroyed");
 }
 
-bool NewRenderer::init() {
+bool Renderer::init() {
   if (!shadow_pipeline.init()) {
     return false;
   }
@@ -35,9 +35,9 @@ bool NewRenderer::init() {
   return true;
 }
 
-void NewRenderer::render(std::vector<RenderRequest> &render_request,
-                         SceneLightBuffer lights, CameraComponent camera,
-                         CameraComponent shadow_cam) {
+void Renderer::render(std::vector<RenderRequest> &render_request,
+                      SceneLightBuffer lights, CameraComponent camera,
+                      CameraComponent shadow_cam) {
 
   cmd_ = SDL_AcquireGPUCommandBuffer(device_);
   shadow_pipeline.set_projection(shadow_cam.projection);
@@ -54,6 +54,7 @@ void NewRenderer::render(std::vector<RenderRequest> &render_request,
   standard_pipeline.set_projection(camera.projection);
   standard_pipeline.set_view(camera.view);
   standard_pipeline.set_scene_lights(lights);
+
   standard_pipeline.set_light_space_proj_view(shadow_cam.projection,
                                               shadow_cam.view);
 
@@ -87,7 +88,7 @@ static std::vector<uint8_t> load_spirv(std::filesystem::path path) {
   return buf;
 }
 
-bool NewRenderer::create_compute_pipeline() {
+bool Renderer::create_compute_pipeline() {
   auto spirv = load_spirv("./Data/shaders/fft.comp.spv");
 
   const SDL_GPUComputePipelineCreateInfo create_info = {
@@ -120,7 +121,7 @@ bool NewRenderer::create_compute_pipeline() {
   return true;
 }
 
-bool NewRenderer::create_compute_target() {
+bool Renderer::create_compute_target() {
   SDL_GPUTextureCreateInfo info{};
   info.type = SDL_GPU_TEXTURETYPE_2D;
   info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
@@ -139,7 +140,7 @@ bool NewRenderer::create_compute_target() {
   return true;
 }
 
-void NewRenderer::run_compute_pass() {
+void Renderer::run_compute_pass() {
   cmd_ = SDL_AcquireGPUCommandBuffer(device_);
   SDL_GPUStorageTextureReadWriteBinding rw_binding{};
   rw_binding.texture = compute_target_;

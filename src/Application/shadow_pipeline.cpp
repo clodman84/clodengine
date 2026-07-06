@@ -1,4 +1,5 @@
 #include "include/graphics_pipeline.h"
+#include <SDL3/SDL_gpu.h>
 
 #ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>
@@ -146,8 +147,6 @@ const void ShadowPipeline::draw_model(std::shared_ptr<Model> model,
   }
   model->bind(pass_);
   for (const auto &dc : model->draw_calls()) {
-    if (dc.alpha_mode != AlphaMode::OPAQUE)
-      continue;
     SDL_PushGPUVertexUniformData(cmd_, 0, &shadow_uniform_,
                                  sizeof(ShadowUniform));
     SDL_DrawGPUIndexedPrimitives(pass_, dc.index_count, 1, dc.index_offset, 0,

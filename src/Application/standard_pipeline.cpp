@@ -168,14 +168,14 @@ bool StandardPipeline::create_samplers() {
 
   // sampler for the shadow map
   SDL_GPUSamplerCreateInfo shadow_info{};
-  info.min_filter = SDL_GPU_FILTER_LINEAR;
-  info.mag_filter = SDL_GPU_FILTER_LINEAR;
-  info.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_NEAREST;
-  info.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
-  info.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
-  info.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
-  info.enable_compare = true;
-  info.compare_op = SDL_GPU_COMPAREOP_LESS_OR_EQUAL;
+  shadow_info.min_filter = SDL_GPU_FILTER_LINEAR;
+  shadow_info.mag_filter = SDL_GPU_FILTER_LINEAR;
+  shadow_info.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_NEAREST;
+  shadow_info.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+  shadow_info.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+  shadow_info.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+  shadow_info.enable_compare = true;
+  shadow_info.compare_op = SDL_GPU_COMPAREOP_LESS_OR_EQUAL;
 
   shadow_sampler_ = SDL_CreateGPUSampler(device_, &shadow_info);
   if (!shadow_sampler_) {

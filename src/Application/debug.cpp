@@ -1,6 +1,7 @@
 #include "include/components.h"
 #include "include/game.h"
 #include <SDL3/SDL_gpu.h>
+
 #include <cstdint>
 #include <entt/entity/entity.hpp>
 #include <entt/entity/fwd.hpp>

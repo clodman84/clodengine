@@ -29,7 +29,7 @@ public:
 
 private:
   float previous_frame_time = 0.;
-  NewRenderer renderer;
+  Renderer renderer;
   std::unique_ptr<Scene> level;
   std::shared_ptr<entt::registry> registry;
   SDL_GPUDevice *device_;

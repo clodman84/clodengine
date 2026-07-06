@@ -12,11 +12,11 @@ struct RenderRequest {
   WorldTransformComponent transform;
 };
 
-class NewRenderer {
+class Renderer {
 public:
-  explicit NewRenderer(SDL_GPUDevice *device, SDL_Window *window,
-                       std::shared_ptr<TextureManager> texture_manager);
-  ~NewRenderer();
+  explicit Renderer(SDL_GPUDevice *device, SDL_Window *window,
+                    std::shared_ptr<TextureManager> texture_manager);
+  ~Renderer();
   bool init();
   void render(std::vector<RenderRequest> &render_request,
               SceneLightBuffer lights, CameraComponent camera,

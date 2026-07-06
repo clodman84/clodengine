@@ -2,7 +2,6 @@ add_library(clodengine STATIC
     gpu_utils.cpp
     image.cpp
     model.cpp
-    renderer.cpp
     game.cpp
     scene.cpp
     animations.cpp
