@@ -1,6 +1,7 @@
 #include "include/game.h"
 #include "include/components.h"
-#include "include/renderer.h"
+#include "include/graphics_pipeline.h"
+#include "include/renderer2.h"
 #include "include/scene.h"
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_timer.h>
@@ -9,6 +10,7 @@
 #include <imgui.h>
 #include <memory>
 #include <sys/types.h>
+#include <vector>
 
 #ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>
@@ -63,7 +65,7 @@ void Game::init() {
 
 Game::~Game() { SDL_Log("[Game] Game Destoyed!"); }
 
-void Game::gather_lights() {
+SceneLightBuffer Game::gather_lights() {
   SceneLightBuffer lights{};
   lights.ambient = 0.15; // Hardcoded ambient light is yucky
   for (auto [e, l, world] :
@@ -76,7 +78,7 @@ void Game::gather_lights() {
     lights.directional_lights[lights.num_directional++] = {
         -world.matrix[2], glm::vec4(l.colour * l.intensity, 0.f)};
   }
-  renderer.set_scene_lights(lights);
+  return lights;
 }
 
 void Game::update_cameras() {
@@ -89,7 +91,7 @@ void Game::update_cameras() {
       const float h = cam.ortho_size;
       float w;
       if (registry->try_get<DirectionalLightComponent>(e))
-        w = h * renderer.shadow_aspect();
+        w = h * renderer.shadow_map_aspect();
       else
         w = h * aspect();
       cam.projection =
@@ -183,35 +185,24 @@ void Game::render_frame() {
 
   handle_input(dt);
   advance_animations(dt);
-  gather_lights();
+  SceneLightBuffer lights = gather_lights();
   level->update_world_transforms();
   update_cameras();
 
   auto blah = registry->view<DirectionalLightComponent, CameraComponent>();
   auto &active_light = blah.get<CameraComponent>(blah.front());
-  renderer.set_projection(active_light.projection);
-  renderer.set_view(active_light.view);
-
-  renderer.begin_shadow_pass();
-  for (auto [e, renderable, transform] :
-       registry->view<RenderableComponent, WorldTransformComponent>().each())
-    renderer.draw_model_shadow(renderable.model, transform);
-  renderer.end_shadow_pass();
 
   auto bleh = registry->view<Player, CameraComponent>();
   auto &active_camera = bleh.get<CameraComponent>(bleh.front());
-  renderer.set_projection(active_camera.projection);
-  renderer.set_view(active_camera.view);
 
-  renderer.begin_frame();
-  for (auto [e, renderable, transform] :
-       registry->view<RenderableComponent, WorldTransformComponent>().each())
-    renderer.draw_model(renderable.model, transform, DrawPass::Opaque);
-  for (auto [e, renderable, transform] :
-       registry->view<RenderableComponent, WorldTransformComponent>().each())
-    renderer.draw_model(renderable.model, transform, DrawPass::Transparent);
-  renderer.end_frame();
+  std::vector<RenderRequest> render_request;
 
+  for (auto [e, renderable, transform] :
+       registry->view<RenderableComponent, WorldTransformComponent>().each()) {
+    render_request.push_back({renderable.model, transform});
+  };
+
+  renderer.render(render_request, lights, active_camera, active_light);
   renderer.run_compute_pass();
 }
 

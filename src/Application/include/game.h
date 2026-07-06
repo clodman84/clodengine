@@ -1,6 +1,7 @@
 #pragma once
 
-#include "include/renderer.h"
+#include "include/graphics_pipeline.h"
+#include "include/renderer2.h"
 #include "include/scene.h"
 
 #include "entt/entt.hpp"
@@ -14,19 +15,21 @@ public:
   ~Game();
   void init();
   void render_frame();
+
   float aspect() const {
     return (float)renderer.render_width() / renderer.render_height();
   }
   SDL_GPUTexture *render_target() const { return renderer.render_target(); }
+
   void advance_animations(float dt);
   void draw_debug();
-  void gather_lights();
+  SceneLightBuffer gather_lights();
   void update_cameras();
   void handle_input(float dt);
 
 private:
   float previous_frame_time = 0.;
-  Renderer renderer;
+  NewRenderer renderer;
   std::unique_ptr<Scene> level;
   std::shared_ptr<entt::registry> registry;
   SDL_GPUDevice *device_;

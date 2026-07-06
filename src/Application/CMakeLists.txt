@@ -7,6 +7,10 @@ add_library(clodengine STATIC
     scene.cpp
     animations.cpp
     debug.cpp
+    pipeline.cpp
+    standard_pipeline.cpp
+    shadow_pipeline.cpp
+    renderer2.cpp
 )
 
 target_include_directories(clodengine
