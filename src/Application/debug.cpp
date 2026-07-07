@@ -591,6 +591,10 @@ void Game::draw_debug() {
       if (ImGui::CollapsingHeader("ShadowMap")) {
         ImGui::Image((ImTextureID)renderer.shadow_map(), {512, 512});
       }
+
+      if (ImGui::CollapsingHeader("SelectionMask")) {
+        ImGui::Image((ImTextureID)renderer.mask_map(), {768, 512});
+      }
       ImGui::EndTabItem();
     }
 

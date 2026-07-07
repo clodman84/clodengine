@@ -32,6 +32,7 @@ public:
   }
   SDL_GPUTexture *fft_source() const { return fft_input->texture; }
   SDL_GPUTexture *compute_target() const { return compute_target_; }
+  SDL_GPUTexture *mask_map() const { return mask_pipeline.get_mask(); }
   float shadow_map_aspect() const {
     return shadow_pipeline.shadow_map_aspect();
   }
@@ -45,6 +46,7 @@ private:
 
   ShadowPipeline shadow_pipeline;
   StandardPipeline standard_pipeline;
+  MaskPipeline mask_pipeline;
 
   std::shared_ptr<TextureManager> texture_manager_;
 

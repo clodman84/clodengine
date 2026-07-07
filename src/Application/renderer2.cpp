@@ -7,7 +7,8 @@ Renderer::Renderer(SDL_GPUDevice *device, SDL_Window *window,
                    std::shared_ptr<TextureManager> texture_manager)
     : device_(device), window_(window), texture_manager_(texture_manager),
       shadow_pipeline(device, window, texture_manager),
-      standard_pipeline(device, window, texture_manager) {
+      standard_pipeline(device, window, texture_manager),
+      mask_pipeline(device, window, texture_manager) {
   SDL_Log("[Renderer] Renderer object created");
 };
 
@@ -26,7 +27,9 @@ bool Renderer::init() {
   if (!standard_pipeline.init()) {
     return false;
   }
-
+  if (!mask_pipeline.init()) {
+    return false;
+  }
   fft_input =
       std::make_unique<Image>("./Data/assets/fft_input.png", texture_manager_);
   fft_input->load_fullres();
@@ -40,9 +43,18 @@ void Renderer::render(std::vector<RenderRequest> &render_request,
                       CameraComponent shadow_cam) {
 
   cmd_ = SDL_AcquireGPUCommandBuffer(device_);
+
+  mask_pipeline.set_projection(camera.projection);
+  mask_pipeline.set_view(camera.view);
+  mask_pipeline.begin_pass(cmd_);
+  for (auto &request : render_request) {
+    mask_pipeline.draw_model(request.model, request.transform, cmd_,
+                             DrawPass::OPAQUE);
+  }
+  mask_pipeline.end_pass();
+
   shadow_pipeline.set_projection(shadow_cam.projection);
   shadow_pipeline.set_view(shadow_cam.view);
-
   shadow_pipeline.begin_pass(cmd_);
   for (auto &request : render_request) {
     shadow_pipeline.draw_model(request.model, request.transform, cmd_,

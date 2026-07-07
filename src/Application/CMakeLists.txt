@@ -9,6 +9,7 @@ add_library(clodengine STATIC
     pipeline.cpp
     standard_pipeline.cpp
     shadow_pipeline.cpp
+    mask_pipeline.cpp
     renderer2.cpp
 )
 

@@ -23,6 +23,10 @@ struct ShadowUniform {
   glm::mat4 model;
 };
 
+struct ScreenDimensions {
+  glm::vec2 dimensions;
+};
+
 struct DirectionalLight {
   glm::vec4 direction;
   glm::vec4 colour;
@@ -182,5 +186,45 @@ private:
   static constexpr int shadow_map_height = 2048;
 };
 
-// class PickerPipeline : public Pipeline {};
+class MaskPipeline : public Pipeline {
+public:
+  // I am not sure if this is the optimal way to generate stencils? but okay I
+  // guess, for JFA I need a regular ass texture that's just a mask of where the
+  // object is
+  MaskPipeline(SDL_GPUDevice *device, SDL_Window *window,
+               std::shared_ptr<TextureManager> texture_manager)
+      : Pipeline(device, window, texture_manager) {};
+  ~MaskPipeline() {
+    destroy_samplers();
+    destroy_textures();
+  };
+  void begin_pass(SDL_GPUCommandBuffer *cmd_) override;
+  SDL_GPUTexture *get_mask() const { return mask_map_; }
+  const void draw_model(std::shared_ptr<Model> model,
+                        const WorldTransformComponent &transform,
+                        SDL_GPUCommandBuffer *cmd_, DrawPass pass) override;
+  float mask_map_aspect() const { return (float)mask_width / mask_height; };
+  void set_view(const glm::mat4 &v) { view_ = v; }
+  void set_projection(const glm::mat4 &p) { proj_ = p; }
+
+private:
+  bool create_pipeline() override;
+  bool create_textures() override;
+  bool create_samplers() override;
+
+  bool destroy_textures() override;
+  bool destroy_samplers() override;
+  ShadowUniform mask_uniform_{};
+  SDL_GPUTexture *mask_map_ = nullptr;
+
+  glm::mat4 proj_;
+  glm::mat4 view_;
+
+  std::string name = "Mask Pipeline";
+
+  static constexpr int mask_width = 1920;
+  static constexpr int mask_height = 1080;
+  ScreenDimensions screen_dimensions{{1920, 1080}};
+};
+
 // class CompositePipeline : public Pipeline {};
