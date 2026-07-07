@@ -101,7 +101,7 @@ static std::vector<uint8_t> load_spirv(std::filesystem::path path) {
 }
 
 bool Renderer::create_compute_pipeline() {
-  auto spirv = load_spirv("./Data/shaders/fft.comp.spv");
+  auto spirv = load_spirv("./Data/shaders/jfa.comp.spv");
 
   const SDL_GPUComputePipelineCreateInfo create_info = {
       .code_size = spirv.size(),
@@ -137,8 +137,8 @@ bool Renderer::create_compute_target() {
   SDL_GPUTextureCreateInfo info{};
   info.type = SDL_GPU_TEXTURETYPE_2D;
   info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
-  info.width = static_cast<Uint32>(fft_input->width);
-  info.height = static_cast<Uint32>(fft_input->height);
+  info.width = static_cast<Uint32>(mask_pipeline.render_width());
+  info.height = static_cast<Uint32>(mask_pipeline.render_height());
   info.layer_count_or_depth = 1;
   info.num_levels = 1;
   info.usage =
@@ -173,9 +173,10 @@ void Renderer::run_compute_pass() {
   // 1. pipeline
   SDL_BindGPUComputePipeline(compute_pass, compute_pipeline_);
   // 2. readonly input texture (set = 1)
-  SDL_BindGPUComputeStorageTextures(compute_pass, 0, &fft_input->texture, 1);
+  SDL_GPUTexture *mask = mask_pipeline.get_mask();
+  SDL_BindGPUComputeStorageTextures(compute_pass, 0, &mask, 1);
   // 3. dispatch
-  uint32_t total = fft_input->height * fft_input->width;
+  uint32_t total = mask_pipeline.render_height() * mask_pipeline.render_width();
   uint32_t groups = (total + 63) / 64;
   SDL_DispatchGPUCompute(compute_pass, groups, 1, 1);
 

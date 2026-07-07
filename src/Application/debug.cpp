@@ -601,13 +601,13 @@ void Game::draw_debug() {
     if (ImGui::BeginTabItem("Compute Shader")) {
       ImGui::BeginGroup();
       ImGui::Text("Input:");
-      ImGui::Image((ImTextureID)renderer.fft_source(), {512, 512});
+      ImGui::Image((ImTextureID)renderer.mask_map(), {768, 512});
       ImGui::EndGroup();
 
       ImGui::SameLine();
       ImGui::BeginGroup();
       ImGui::Text("Output:");
-      ImGui::Image((ImTextureID)renderer.compute_target(), {512, 512});
+      ImGui::Image((ImTextureID)renderer.compute_target(), {768, 512});
       ImGui::EndGroup();
 
       ImGui::EndTabItem();

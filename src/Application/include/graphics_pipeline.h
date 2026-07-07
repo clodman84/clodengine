@@ -207,6 +207,9 @@ public:
   void set_view(const glm::mat4 &v) { view_ = v; }
   void set_projection(const glm::mat4 &p) { proj_ = p; }
 
+  int render_width() const { return mask_width; };
+  int render_height() const { return mask_height; };
+
 private:
   bool create_pipeline() override;
   bool create_textures() override;
@@ -224,6 +227,7 @@ private:
 
   static constexpr int mask_width = 1920;
   static constexpr int mask_height = 1080;
+
   ScreenDimensions screen_dimensions{{1920, 1080}};
 };
 
