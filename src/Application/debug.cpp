@@ -598,18 +598,9 @@ void Game::draw_debug() {
       ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem("Compute Shader")) {
-      ImGui::BeginGroup();
-      ImGui::Text("Input:");
-      ImGui::Image((ImTextureID)renderer.mask_map(), {768, 512});
-      ImGui::EndGroup();
-
-      ImGui::SameLine();
-      ImGui::BeginGroup();
+    if (ImGui::BeginTabItem("JFA Result")) {
       ImGui::Text("Output:");
       ImGui::Image((ImTextureID)renderer.compute_target(), {768, 512});
-      ImGui::EndGroup();
-
       ImGui::EndTabItem();
     }
 

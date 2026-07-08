@@ -1,18 +1,44 @@
 #version 450
 
-layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 // set = 0: sampled textures
-layout(set = 0, binding = 0, rgba8) uniform readonly image2D u_input;
+layout(set = 0, binding = 0, rgba32f) uniform readonly image2D u_input;
 // set = 1: readwrite storage textures
-layout(set = 1, binding = 0, rgba8) uniform writeonly image2D u_output;
+layout(set = 1, binding = 0, rgba32f) uniform writeonly image2D u_output;
+layout(set = 2, binding = 0, std140) uniform PushConstants {
+    int k;
+} pc;
 
 void main() {
-    // width and height come from imageSize() instead of a uniform
     ivec2 size   = imageSize(u_input);
-    uint  idx    = gl_GlobalInvocationID.x;
-    if (idx >= uint(size.x * size.y)) return;
+    ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
+    if (coords.x >= size.x || coords.y >= size.y) return;
+    vec4 pixel_data = imageLoad(u_input, coords);
 
-    ivec2 coords = ivec2(int(idx) % size.x, int(idx) / size.x);
-    imageStore(u_output, coords, imageLoad(u_input, coords));
+    int k = pc.k;
+    if (k <= 0) {
+	    imageStore(u_output, coords, pixel_data);
+	    return;
+    }
+    for (int j = -k; j <= k; j += k) {
+	    for (int i = -k; i <= k; i += k) {
+		if (i == 0 && j == 0) continue;
+		ivec2 q = coords + ivec2(i, j);
+		if (q.x < 0 || q.y < 0 || q.x >= size.x || q.y >= size.y) continue;
+		vec4 neighbor_data = imageLoad(u_input, q);
+		if (neighbor_data.x < 0.0) continue; // neighbor has no seed
+
+		if (pixel_data.x < 0.0) {
+		// we have no seed yet, take theirs
+			pixel_data = neighbor_data;
+		} else {
+		// both have seeds, keep whichever is closer to `coords`
+			float dist_current  = distance(vec2(coords), pixel_data.xy);
+			float dist_neighbor = distance(vec2(coords), neighbor_data.xy);
+			if (dist_neighbor < dist_current) pixel_data = neighbor_data;
+		}
+	    }
+	}
+    imageStore(u_output, coords, pixel_data);
 }

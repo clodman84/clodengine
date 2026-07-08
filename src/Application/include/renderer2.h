@@ -21,7 +21,6 @@ public:
   void render(std::vector<RenderRequest> &render_request,
               SceneLightBuffer lights, CameraComponent camera,
               CameraComponent shadow_cam);
-  void run_compute_pass();
   int render_width() const { return standard_pipeline.render_width(); };
   int render_height() const { return standard_pipeline.render_height(); };
   SDL_GPUTexture *render_target() const {
@@ -44,6 +43,7 @@ private:
   // textures
   bool create_compute_target();
 
+  void run_compute_pass(int k, SDL_GPUCommandBuffer *cmd);
   ShadowPipeline shadow_pipeline;
   StandardPipeline standard_pipeline;
   MaskPipeline mask_pipeline;
@@ -55,9 +55,6 @@ private:
 
   SDL_GPUComputePipeline *compute_pipeline_ = nullptr;
   SDL_GPUTexture *compute_target_ = nullptr;
-
-  SDL_GPUCommandBuffer *cmd_ = nullptr;
-  SDL_GPURenderPass *pass_ = nullptr;
-
   std::unique_ptr<Image> fft_input;
+  SDL_GPUTexture *jfa_source = nullptr;
 };

@@ -85,13 +85,15 @@ bool MaskPipeline::create_textures() {
 
   SDL_GPUTextureCreateInfo info{};
   info.type = SDL_GPU_TEXTURETYPE_2D;
-  info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_SNORM;
+  info.format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT;
   info.width = mask_width;
   info.height = mask_height;
   info.layer_count_or_depth = 1;
   info.num_levels = 1;
-  info.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
-
+  info.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET |
+               SDL_GPU_TEXTUREUSAGE_SAMPLER |
+               SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_READ |
+               SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE;
   texture_manager_->create_texture(info, &mask_map_);
   if (!mask_map_) {
     SDL_Log("[MaskPipeline] create_mask_map: failed: %s", SDL_GetError());
@@ -111,7 +113,7 @@ bool MaskPipeline::destroy_samplers() { return true; }
 void MaskPipeline::begin_pass(SDL_GPUCommandBuffer *cmd_) {
   SDL_GPUColorTargetInfo target_info{};
   target_info.texture = mask_map_;
-  target_info.clear_color = {0};
+  target_info.clear_color = {-1};
   target_info.load_op = SDL_GPU_LOADOP_CLEAR;
   target_info.store_op = SDL_GPU_STOREOP_STORE;
   target_info.cycle = true;

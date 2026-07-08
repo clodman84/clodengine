@@ -203,7 +203,6 @@ void Game::render_frame() {
   };
 
   renderer.render(render_request, lights, active_camera, active_light);
-  renderer.run_compute_pass();
 }
 
 void Game::advance_animations(float dt) {
