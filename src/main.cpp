@@ -88,9 +88,13 @@ private:
                 << std::endl;
       return false;
     }
+    SDL_PropertiesID props = SDL_GetGPUDeviceProperties(gpu_device_);
+    const char *device_name = SDL_GetStringProperty(
+        props, SDL_PROP_GPU_DEVICE_NAME_STRING, "unknown");
+    SDL_Log("GPU: %s", device_name);
 
     if (!SDL_ShaderCross_Init()) {
-      std::cerr << "SDL_ShaderCross_Init failed\n";
+      SDL_Log("SDL_ShaderCross_Init failed");
       return false;
     }
 

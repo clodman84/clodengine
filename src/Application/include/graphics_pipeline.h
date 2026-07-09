@@ -40,6 +40,10 @@ struct SceneLightBuffer {
   DirectionalLight directional_lights[4];
 };
 
+struct TimeUniform {
+  float time;
+};
+
 enum class DrawPass { OPAQUE, TRANSPARENT };
 
 class Pipeline {
@@ -229,6 +233,42 @@ private:
   static constexpr int mask_height = 1080;
 
   ScreenDimensions screen_dimensions{{1920, 1080}};
+};
+
+class OutlinePipeline : public Pipeline {
+public:
+  OutlinePipeline(SDL_GPUDevice *device, SDL_Window *window,
+                  std::shared_ptr<TextureManager> texture_manager)
+      : Pipeline(device, window, texture_manager) {};
+  ~OutlinePipeline() {
+    destroy_samplers();
+    destroy_textures();
+  };
+  void begin_pass(SDL_GPUCommandBuffer *cmd_) override;
+  void set_render_target(SDL_GPUTexture *target) { render_target_ = target; }
+  void set_jfa_source(SDL_GPUTexture *target) { jfa_source = target; }
+  const void draw_model(std::shared_ptr<Model> model,
+                        const WorldTransformComponent &transform,
+                        SDL_GPUCommandBuffer *cmd_, DrawPass pass) override;
+  const void draw_outline(SDL_GPUCommandBuffer *cmd_);
+  int render_width() const { return render_width_; };
+  int render_height() const { return render_height_; };
+
+private:
+  bool create_pipeline() override;
+  bool create_textures() override;
+  bool create_samplers() override;
+
+  bool destroy_textures() override;
+  bool destroy_samplers() override;
+
+  SDL_GPUTexture *render_target_ = nullptr;
+  SDL_GPUTexture *jfa_source = nullptr;
+  std::string name = "Outline Pipeline";
+  SDL_GPUSampler *sampler_ = nullptr;
+
+  static constexpr int render_width_ = 1920;
+  static constexpr int render_height_ = 1080;
 };
 
 // class CompositePipeline : public Pipeline {};

@@ -14,31 +14,41 @@ void main() {
     ivec2 size   = imageSize(u_input);
     ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
     if (coords.x >= size.x || coords.y >= size.y) return;
-    vec4 pixel_data = imageLoad(u_input, coords);
 
+    vec4 pixel_data = imageLoad(u_input, coords);
     int k = pc.k;
     if (k <= 0) {
-	    imageStore(u_output, coords, pixel_data);
-	    return;
+        imageStore(u_output, coords, pixel_data);
+        return;
     }
-    for (int j = -k; j <= k; j += k) {
-	    for (int i = -k; i <= k; i += k) {
-		if (i == 0 && j == 0) continue;
-		ivec2 q = coords + ivec2(i, j);
-		if (q.x < 0 || q.y < 0 || q.x >= size.x || q.y >= size.y) continue;
-		vec4 neighbor_data = imageLoad(u_input, q);
-		if (neighbor_data.x < 0.0) continue; // neighbor has no seed
 
-		if (pixel_data.x < 0.0) {
-		// we have no seed yet, take theirs
-			pixel_data = neighbor_data;
-		} else {
-		// both have seeds, keep whichever is closer to `coords`
-			float dist_current  = distance(vec2(coords), pixel_data.xy);
-			float dist_neighbor = distance(vec2(coords), neighbor_data.xy);
-			if (dist_neighbor < dist_current) pixel_data = neighbor_data;
-		}
-	    }
-	}
+    vec2 fcoords = vec2(coords);
+    bool has_seed = pixel_data.x >= 0.0;
+    float best_dist2 = has_seed
+        ? dot(fcoords - pixel_data.xy, fcoords - pixel_data.xy)
+        : 0.0;
+
+    for (int j = -k; j <= k; j += k) {
+        for (int i = -k; i <= k; i += k) {
+            if (i == 0 && j == 0) continue;
+            ivec2 q = coords + ivec2(i, j);
+            if (q.x < 0 || q.y < 0 || q.x >= size.x || q.y >= size.y) continue;
+
+            vec4 neighbor_data = imageLoad(u_input, q);
+            if (neighbor_data.x < 0.0) continue;
+
+            if (!has_seed) {
+                pixel_data = neighbor_data;
+                best_dist2 = dot(fcoords - neighbor_data.xy, fcoords - neighbor_data.xy);
+                has_seed = true;
+            } else {
+                float d2 = dot(fcoords - neighbor_data.xy, fcoords - neighbor_data.xy);
+                if (d2 < best_dist2) {
+                    pixel_data = neighbor_data;
+                    best_dist2 = d2;
+                }
+            }
+        }
+    }
     imageStore(u_output, coords, pixel_data);
 }

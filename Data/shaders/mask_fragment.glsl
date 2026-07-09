@@ -7,7 +7,5 @@ layout(std140, set = 3, binding = 0) uniform UniformBlock {
 };
 
 void main() {
-    vec2 uv = gl_FragCoord.xy / resolution;
-    uv.y = 1 - uv.y; // is this even necessary lowkey, (for JFA) 
-    FragColour = vec4(uv, 0, 1);
+    FragColour = vec4(gl_FragCoord.xy, 0, 1);
 }

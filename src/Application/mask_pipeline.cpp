@@ -42,7 +42,7 @@ bool MaskPipeline::create_pipeline() {
   attribs[2].offset = sizeof(float) * 6;
 
   SDL_GPUColorTargetDescription colour_target[1]{};
-  colour_target[0].format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_SNORM;
+  colour_target[0].format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT;
   colour_target[0].blend_state.enable_blend = false;
 
   SDL_GPUGraphicsPipelineCreateInfo pipeline_info{};

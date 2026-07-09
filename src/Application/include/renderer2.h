@@ -44,9 +44,11 @@ private:
   bool create_compute_target();
 
   void run_compute_pass(int k, SDL_GPUCommandBuffer *cmd);
+
   ShadowPipeline shadow_pipeline;
   StandardPipeline standard_pipeline;
   MaskPipeline mask_pipeline;
+  OutlinePipeline outline_pipeline;
 
   std::shared_ptr<TextureManager> texture_manager_;
 

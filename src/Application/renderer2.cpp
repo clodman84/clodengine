@@ -2,13 +2,17 @@
 #include "include/components.h"
 #include "include/graphics_pipeline.h"
 #include <SDL3/SDL_gpu.h>
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_video.h>
+#include <glm/integer.hpp>
 
 Renderer::Renderer(SDL_GPUDevice *device, SDL_Window *window,
                    std::shared_ptr<TextureManager> texture_manager)
     : device_(device), window_(window), texture_manager_(texture_manager),
       shadow_pipeline(device, window, texture_manager),
       standard_pipeline(device, window, texture_manager),
-      mask_pipeline(device, window, texture_manager) {
+      mask_pipeline(device, window, texture_manager),
+      outline_pipeline(device, window, texture_manager) {
   SDL_Log("[Renderer] Renderer object created");
 };
 
@@ -34,11 +38,18 @@ bool Renderer::init() {
   if (!mask_pipeline.init()) {
     return false;
   }
+  if (!outline_pipeline.init()) {
+    return false;
+  }
   fft_input =
       std::make_unique<Image>("./Data/assets/fft_input.png", texture_manager_);
   fft_input->load_fullres();
   create_compute_pipeline();
   create_compute_target();
+
+  outline_pipeline.set_jfa_source(compute_target_);
+  outline_pipeline.set_render_target(standard_pipeline.render_target());
+
   return true;
 }
 
@@ -87,14 +98,17 @@ void Renderer::render(std::vector<RenderRequest> &render_request,
   SDL_SubmitGPUCommandBuffer(cmd);
 
   SDL_GPUCommandBuffer *post_processing = SDL_AcquireGPUCommandBuffer(device_);
-
   jfa_source = mask_pipeline.get_mask();
+
   constexpr int outline_width = 40;
+
   int k = 1;
-  int iters = 0;
-  while (k <= outline_width) {
-    run_compute_pass(k, post_processing);
+  while (k * 2 <= outline_width)
     k *= 2;
+  int iters = 0;
+  while (k >= 1) {
+    run_compute_pass(k, post_processing);
+    k /= 2;
     iters++;
     std::swap(jfa_source, compute_target_);
   }
@@ -102,6 +116,12 @@ void Renderer::render(std::vector<RenderRequest> &render_request,
     std::swap(jfa_source, compute_target_);
 
   SDL_SubmitGPUCommandBuffer(post_processing);
+
+  SDL_GPUCommandBuffer *outline = SDL_AcquireGPUCommandBuffer(device_);
+  outline_pipeline.begin_pass(outline);
+  outline_pipeline.draw_outline(outline);
+  outline_pipeline.end_pass();
+  SDL_SubmitGPUCommandBuffer(outline);
 };
 
 static std::vector<uint8_t> load_spirv(std::filesystem::path path) {
