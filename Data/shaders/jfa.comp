@@ -2,13 +2,17 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-// set = 0: sampled textures
 layout(set = 0, binding = 0, rgba32f) uniform readonly image2D u_input;
-// set = 1: readwrite storage textures
 layout(set = 1, binding = 0, rgba32f) uniform writeonly image2D u_output;
 layout(set = 2, binding = 0, std140) uniform PushConstants {
     int k;
 } pc;
+
+const ivec2 OFFSETS[8] = ivec2[](
+    ivec2(-1,-1), ivec2(0,-1), ivec2(1,-1),
+    ivec2(-1, 0),              ivec2(1, 0),
+    ivec2(-1, 1), ivec2(0, 1), ivec2(1, 1)
+);
 
 void main() {
     ivec2 size   = imageSize(u_input);
@@ -28,26 +32,21 @@ void main() {
         ? dot(fcoords - pixel_data.xy, fcoords - pixel_data.xy)
         : 0.0;
 
-    for (int j = -k; j <= k; j += k) {
-        for (int i = -k; i <= k; i += k) {
-            if (i == 0 && j == 0) continue;
-            ivec2 q = coords + ivec2(i, j);
-            if (q.x < 0 || q.y < 0 || q.x >= size.x || q.y >= size.y) continue;
+    bool interior = coords.x >= k && coords.y >= k &&
+                    coords.x < size.x - k && coords.y < size.y - k;
 
-            vec4 neighbor_data = imageLoad(u_input, q);
-            if (neighbor_data.x < 0.0) continue;
+    for (int n = 0; n < 8; ++n) {
+        ivec2 q = coords + OFFSETS[n] * k;
+        if (!interior && (q.x < 0 || q.y < 0 || q.x >= size.x || q.y >= size.y)) continue;
 
-            if (!has_seed) {
-                pixel_data = neighbor_data;
-                best_dist2 = dot(fcoords - neighbor_data.xy, fcoords - neighbor_data.xy);
-                has_seed = true;
-            } else {
-                float d2 = dot(fcoords - neighbor_data.xy, fcoords - neighbor_data.xy);
-                if (d2 < best_dist2) {
-                    pixel_data = neighbor_data;
-                    best_dist2 = d2;
-                }
-            }
+        vec4 neighbor_data = imageLoad(u_input, q);
+        if (neighbor_data.x < 0.0) continue;
+
+        float d2 = dot(fcoords - neighbor_data.xy, fcoords - neighbor_data.xy);
+        if (!has_seed || d2 < best_dist2) {
+            pixel_data = neighbor_data;
+            best_dist2 = d2;
+            has_seed = true;
         }
     }
     imageStore(u_output, coords, pixel_data);
